@@ -43,7 +43,7 @@ O MVP está pronto quando este cenário funcionar de ponta a ponta pela API:
 | 02 | [Docker Compose com Postgres](02-docker-compose-com-postgres.md) | M0 — Fundação | ✅ |
 | 03 | [Schema do banco (Drizzle) + migration](03-schema-do-banco-drizzle-migration.md) | M0 — Fundação | ⬜ |
 | 04 | [Tratamento de erros padrão](04-tratamento-de-erros-padrao.md) | M0 — Fundação | 🔄 |
-| 05 | [Funções utilitárias](05-funcoes-utilitarias.md) | M0 — Fundação | ⬜ |
+| 05 | [Funções utilitárias](05-funcoes-utilitarias.md) | M0 — Fundação | 🔄 |
 | 06 | [Infraestrutura de testes](06-infraestrutura-de-testes.md) | M0 — Fundação | ⬜ |
 | 07 | [Cadastro da organização](07-cadastro-da-organizacao.md) | M1 — Cadastro e acesso | ⬜ |
 | 08 | [Nome da empresa pelo slug](08-nome-da-empresa-pelo-slug.md) | M1 — Cadastro e acesso | ⬜ |
