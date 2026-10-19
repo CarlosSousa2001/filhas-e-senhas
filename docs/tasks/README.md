@@ -51,7 +51,7 @@ O MVP está pronto quando este cenário funcionar de ponta a ponta pela API:
 | 10 | [Proteção das rotas (middleware)](10-protecao-das-rotas-middleware.md) | M1 — Cadastro e acesso | 🔄 |
 | 11 | [Usuário logado (`/auth/me`)](11-usuario-logado-auth-me.md) | M1 — Cadastro e acesso | 🔄 |
 | 12 | [Troca e redefinição de senha](12-troca-e-redefinicao-de-senha.md) | M1 — Cadastro e acesso | 🔄 |
-| 13 | [Limite de requisições (rate limit)](13-limite-de-requisicoes-rate-limit.md) | M1 — Cadastro e acesso | ⬜ |
+| 13 | [Limite de requisições (rate limit)](13-limite-de-requisicoes-rate-limit.md) | M1 — Cadastro e acesso | 🔄 |
 | 14 | [Departamentos](14-departamentos.md) | M2 — Configuração da clínica | ⬜ |
 | 15 | [Balcões (guichês)](15-balcoes-guiches.md) | M2 — Configuração da clínica | ⬜ |
 | 16 | [Usuários e acesso a departamentos](16-usuarios-e-acesso-a-departamentos.md) | M2 — Configuração da clínica | ⬜ |

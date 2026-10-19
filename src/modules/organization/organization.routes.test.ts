@@ -307,7 +307,7 @@ it('publica request e respostas no OpenAPI usado pelo Scalar', async () => {
     expect.arrayContaining(Object.keys(body)),
   );
   expect(operation.requestBody.content['application/json'].schema.additionalProperties).toBe(false);
-  expect(Object.keys(operation.responses)).toEqual(['201', '400', '409']);
+  expect(Object.keys(operation.responses)).toEqual(['201', '400', '409', '429']);
   for (const status of ['400', '409']) {
     expect(
       operation.responses[status].content['application/json'].schema.properties,

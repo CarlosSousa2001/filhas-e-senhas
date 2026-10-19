@@ -36,3 +36,9 @@ export class InternalServerError extends AppError {
     super('Erro interno do servidor', 500, 'InternalServerError');
   }
 }
+
+export class RateLimitExceededException extends AppError {
+  constructor() {
+    super('Muitas requisições. Tente novamente em instantes.', 429, 'RateLimitExceededException');
+  }
+}

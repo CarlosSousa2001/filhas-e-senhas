@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { env } from '../../env.js';
+import { perIp } from '../../shared/http/rate-limit.js';
 import { apiErrorResponseSchema } from '../../shared/types/api-error-response.js';
 import {
   createOrganizationController,
@@ -17,6 +19,7 @@ export async function organizationRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     '/organizations',
     {
+      config: { rateLimit: perIp(env.RATE_LIMIT_SIGNUP_PER_HOUR, '1 hour') },
       schema: {
         tags: ['Organizations'],
         summary: 'Cadastrar organização',
@@ -29,6 +32,7 @@ export async function organizationRoutes(app: FastifyInstance) {
           201: organizationResponseSchema,
           400: apiErrorResponseSchema,
           409: apiErrorResponseSchema,
+          429: apiErrorResponseSchema,
         },
       },
     },
@@ -38,6 +42,7 @@ export async function organizationRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     '/organizations/by-slug/:slug',
     {
+      config: { rateLimit: perIp(env.RATE_LIMIT_PUBLIC_PER_MINUTE, '1 minute') },
       schema: {
         tags: ['Organizations'],
         summary: 'Nome da empresa pelo slug',
@@ -48,6 +53,7 @@ export async function organizationRoutes(app: FastifyInstance) {
         response: {
           200: organizationPublicResponseSchema,
           404: apiErrorResponseSchema,
+          429: apiErrorResponseSchema,
         },
       },
     },

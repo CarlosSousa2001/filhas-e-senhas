@@ -1,6 +1,9 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { env } from '../../env.js';
+import { perIp, perKey } from '../../shared/http/rate-limit.js';
 import { apiErrorResponseSchema } from '../../shared/types/api-error-response.js';
+import type { AuthLoginRequest } from './auth.types.js';
 import { authenticate, authMiddleware } from '../../shared/auth/auth-middleware.js';
 import { changePasswordController, loginController, meController } from './auth.controller.js';
 import {
@@ -12,10 +15,26 @@ import {
   authResponseSchema,
 } from './auth.schema.js';
 
+/** Chave do limite por conta: o e-mail do dono ou empresa + usuário do funcionário. */
+function loginAccountKey(request: FastifyRequest): string {
+  const body = request.body as AuthLoginRequest;
+  return 'email' in body
+    ? `login:owner:${body.email}`
+    : `login:user:${body.organizationSlug}:${body.username}`;
+}
+
 export async function authRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     '/auth/login',
     {
+      config: { rateLimit: perIp(env.RATE_LIMIT_LOGIN_PER_IP, '1 minute') },
+      preHandler: [
+        perKey(app, {
+          max: env.RATE_LIMIT_LOGIN_PER_ACCOUNT,
+          timeWindow: '1 minute',
+          keyGenerator: loginAccountKey,
+        }),
+      ],
       schema: {
         tags: ['Auth'],
         summary: 'Login do dono ou funcionário',
@@ -29,6 +48,7 @@ export async function authRoutes(app: FastifyInstance) {
           400: apiErrorResponseSchema,
           401: apiErrorResponseSchema,
           403: apiErrorResponseSchema,
+          429: apiErrorResponseSchema,
         },
       },
     },

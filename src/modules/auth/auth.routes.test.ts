@@ -247,7 +247,7 @@ it('documenta união estrita e respostas no Scalar', async () => {
   expect(spec.statusCode).toBe(200);
   const operation = spec.json().paths['/auth/login'].post;
   expect(operation.tags).toEqual(['Auth']);
-  expect(Object.keys(operation.responses)).toEqual(['200', '400', '401', '403']);
+  expect(Object.keys(operation.responses)).toEqual(['200', '400', '401', '403', '429']);
   const alternatives = operation.requestBody.content['application/json'].schema.anyOf;
   expect(alternatives).toHaveLength(2);
   expect(alternatives[0]).toMatchObject({
