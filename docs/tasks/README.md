@@ -56,7 +56,7 @@ O MVP está pronto quando este cenário funcionar de ponta a ponta pela API:
 | 15 | [Balcões (guichês)](15-balcoes-guiches.md) | M2 — Configuração da clínica | ✅ |
 | 16 | [Usuários e acesso a departamentos](16-usuarios-e-acesso-a-departamentos.md) | M2 — Configuração da clínica | ✅ |
 | 17 | [Dados de exemplo (seed)](17-dados-de-exemplo-seed.md) | M2 — Configuração da clínica | ✅ |
-| 18 | [Gerar senha no balcão](18-gerar-senha-no-balcao.md) | M3 — Senhas no balcão | ⬜ |
+| 18 | [Gerar senha no balcão](18-gerar-senha-no-balcao.md) | M3 — Senhas no balcão | 🔄 |
 | 19 | [Cancelar senha](19-cancelar-senha.md) | M3 — Senhas no balcão | ⬜ |
 | 20 | [Sessão no balcão](20-sessao-no-balcao.md) | M4 — Atendimento | ⬜ |
 | 21 | [Chamar a próxima senha](21-chamar-a-proxima-senha.md) | M4 — Atendimento | ⬜ |

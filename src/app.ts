@@ -12,6 +12,7 @@ import { healthRoutes } from './modules/health/health.routes.js';
 import { departmentRoutes } from './modules/department/department.routes.js';
 import { organizationRoutes } from './modules/organization/organization.routes.js';
 import { servicePointRoutes } from './modules/service-point/service-point.routes.js';
+import { ticketRoutes } from './modules/ticket/ticket.routes.js';
 import { userRoutes } from './modules/user/user.routes.js';
 import { registerDocs } from './shared/http/docs.js';
 import { registerRateLimit } from './shared/http/rate-limit.js';
@@ -54,6 +55,7 @@ export async function buildApp() {
   await app.register(authRoutes);
   await app.register(departmentRoutes);
   await app.register(servicePointRoutes);
+  await app.register(ticketRoutes);
 
   return app;
 }

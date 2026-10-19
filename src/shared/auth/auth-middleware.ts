@@ -117,3 +117,12 @@ export function branchIdOf(user: AuthenticatedUser): string {
 
 /** Roles que enxergam e administram todos os departamentos da filial. */
 export const BRANCH_MANAGEMENT_ROLES: readonly UserRole[] = ['OWNER', 'ADMIN', 'BRANCH_ADMIN'];
+
+/** Roles que operam o balcão (gerar, chamar, cancelar senhas). VIEWER é somente leitura. */
+export const OPERATOR_ROLES: readonly UserRole[] = [
+  'OWNER',
+  'ADMIN',
+  'BRANCH_ADMIN',
+  'MANAGER',
+  'ATTENDANT',
+];
