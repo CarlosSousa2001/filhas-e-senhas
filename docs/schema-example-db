@@ -1,0 +1,577 @@
+-- ============================================================
+-- Sistema de Filas e Senhas
+-- Esqueleto do banco - PostgreSQL
+--
+-- Hierarquia: organizations → branches → (users de filial, departments,
+--             service_points, tickets, public_devices)
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- ============================================================
+-- ORGANIZATIONS
+-- ============================================================
+
+-- Empresa/organização cliente do sistema.
+-- Ponto de partida de todo o domínio.
+-- O slug é gerado automaticamente do nome no cadastro e usado apenas
+-- no link de login dos funcionários (ex.: app.senhas.com/clinica-sorriso/login).
+
+CREATE TABLE organizations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(150) NOT NULL,
+    slug VARCHAR(60) NOT NULL,
+
+    -- CPF (11) ou CNPJ (14), apenas dígitos
+    document VARCHAR(14) NOT NULL,
+
+    -- E-mail principal: cobrança e comunicação
+    contact_email VARCHAR(200) NOT NULL,
+
+    -- Apenas dígitos (10 ou 11)
+    contact_phone VARCHAR(11) NOT NULL,
+
+    -- Aceite dos termos de uso no cadastro (comprovante)
+    terms_accepted_at TIMESTAMPTZ NOT NULL,
+    terms_version VARCHAR(20) NOT NULL,
+
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ,
+
+    -- Slug é único globalmente, inclusive entre organizações excluídas,
+    -- para que um link de login antigo nunca aponte para outra empresa.
+    CONSTRAINT uq_organizations_slug
+        UNIQUE (slug),
+
+    -- Formato: minúsculas, números e hífen (sem hífen nas pontas), 3 a 60
+    CONSTRAINT chk_organizations_slug_format
+        CHECK (
+            slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'
+            AND char_length(slug) BETWEEN 3 AND 60
+        ),
+
+    -- CPF/CNPJ único, inclusive entre organizações excluídas
+    CONSTRAINT uq_organizations_document
+        UNIQUE (document),
+
+    CONSTRAINT chk_organizations_document_format
+        CHECK (document ~ '^([0-9]{11}|[0-9]{14})$'),
+
+    CONSTRAINT chk_organizations_contact_phone_format
+        CHECK (contact_phone ~ '^[0-9]{10,11}$'),
+
+    CONSTRAINT chk_organizations_contact_email_lowercase
+        CHECK (contact_email = lower(contact_email))
+);
+
+-- ============================================================
+-- BRANCHES
+-- Filiais da organização. Cada filial tem seus próprios usuários,
+-- departamentos, guichês e senhas, isolados das demais filiais.
+-- A organização nasce com a filial "Matriz".
+-- V1: cada organização tem uma única filial. O banco já suporta várias.
+-- ============================================================
+
+CREATE TABLE branches (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id),
+    name VARCHAR(100) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
+);
+
+CREATE INDEX ix_branches_organization
+ON branches (
+    organization_id
+);
+
+-- ============================================================
+-- LICENSES
+-- ============================================================
+
+CREATE TYPE license_status AS ENUM (
+    'ACTIVE',
+    'EXPIRED',
+    'CANCELLED'
+);
+
+CREATE TABLE licenses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id),
+    status license_status NOT NULL DEFAULT 'ACTIVE',
+    started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- Toda licença nasce com started_at + 30 dias.
+    -- Licença válida = status ACTIVE e expires_at > agora.
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    -- Exatamente uma licença por organização
+    CONSTRAINT uq_licenses_organization
+        UNIQUE (organization_id)
+);
+
+-- ============================================================
+-- USERS
+-- ============================================================
+
+CREATE TYPE user_role AS ENUM (
+    'OWNER',
+    'ADMIN',
+    'BRANCH_ADMIN',
+    'MANAGER',
+    'ATTENDANT',
+    'VIEWER'
+);
+
+-- Login:
+--   OWNER       → email + senha (email único globalmente entre OWNERs)
+--   funcionário → organizationSlug (do link de login) + username + senha
+--
+-- Todo usuário possui username (inclusive o OWNER).
+-- Email é obrigatório apenas para OWNER.
+-- Email e username são gravados normalizados (minúsculas, sem espaços).
+
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id),
+    -- Nulo para OWNER e ADMIN (usuários de organização)
+    branch_id UUID REFERENCES branches(id),
+    name VARCHAR(150) NOT NULL,
+    username VARCHAR(60) NOT NULL,
+    email VARCHAR(200),
+    password_hash VARCHAR(255) NOT NULL,
+    -- Atualizado a cada troca/redefinição de senha.
+    -- Tokens emitidos antes disso são recusados pelo middleware.
+    password_changed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    role user_role NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ,
+
+    -- Username único dentro da organização (não globalmente).
+    -- Inclui usuários excluídos de propósito: conflito → aplicação oferece restaurar.
+    CONSTRAINT uq_users_organization_username
+        UNIQUE (organization_id, username),
+
+    -- Email de funcionário único na organização quando informado (NULL pode repetir)
+    CONSTRAINT uq_users_organization_email
+        UNIQUE (organization_id, email),
+
+    CONSTRAINT chk_users_username_format
+        CHECK (username ~ '^[a-z0-9]+([._][a-z0-9]+)*$'),
+
+    CONSTRAINT chk_users_email_lowercase
+        CHECK (email IS NULL OR email = lower(email)),
+
+    -- OWNER sempre possui email, pois faz login por email
+    CONSTRAINT chk_users_owner_email
+        CHECK (role <> 'OWNER' OR email IS NOT NULL),
+
+    -- OWNER e ADMIN são da organização (sem filial);
+    -- BRANCH_ADMIN, MANAGER, ATTENDANT e VIEWER pertencem a uma filial
+    CONSTRAINT chk_users_branch_by_role
+        CHECK (
+            (role IN ('OWNER', 'ADMIN') AND branch_id IS NULL)
+            OR (role NOT IN ('OWNER', 'ADMIN') AND branch_id IS NOT NULL)
+        )
+);
+
+-- Email do OWNER é único globalmente no sistema.
+-- Resolve o login por email sem ambiguidade:
+-- email → User OWNER → organization_id
+
+CREATE UNIQUE INDEX uq_users_owner_email
+ON users (email)
+WHERE role = 'OWNER';
+
+-- Exatamente um OWNER por organização
+
+CREATE UNIQUE INDEX uq_users_single_owner
+ON users (organization_id)
+WHERE role = 'OWNER';
+
+-- ============================================================
+-- DEPARTMENTS
+-- ============================================================
+
+CREATE TABLE departments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id),
+    branch_id UUID NOT NULL REFERENCES branches(id),
+    name VARCHAR(100) NOT NULL,
+    prefix VARCHAR(4) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ,
+
+    -- Inclui departamentos excluídos de propósito: prefixo nunca é reaproveitado.
+    -- Conflito com excluído → aplicação oferece restaurar (POST /departments/:id/restore).
+    -- Prefixo único dentro da filial (filiais diferentes podem repetir)
+    CONSTRAINT uq_departments_branch_prefix
+        UNIQUE (branch_id, prefix),
+
+    -- Prefixo normalizado: maiúsculas e números, 1 a 4 caracteres
+    CONSTRAINT chk_departments_prefix_format
+        CHECK (prefix ~ '^[A-Z0-9]{1,4}$')
+);
+
+-- ============================================================
+-- SERVICE POINTS
+-- Guichês / balcões / pontos de atendimento
+-- ============================================================
+
+CREATE TABLE service_points (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id),
+    branch_id UUID NOT NULL REFERENCES branches(id),
+    name VARCHAR(100) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
+);
+
+CREATE INDEX ix_service_points_branch
+ON service_points (
+    branch_id
+);
+
+-- ============================================================
+-- DEPARTMENT_SERVICE_POINTS
+-- Relação N:N entre departamentos e guichês
+-- Vínculo: remover apaga a linha (sem exclusão lógica)
+-- Ambos precisam ser da mesma filial (validado pela aplicação)
+-- ============================================================
+
+CREATE TABLE department_service_points (
+    department_id UUID NOT NULL REFERENCES departments(id),
+    service_point_id UUID NOT NULL REFERENCES service_points(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    PRIMARY KEY (
+        department_id,
+        service_point_id
+    )
+);
+
+-- "Quais departamentos este guichê atende?"
+CREATE INDEX ix_department_service_points_service_point
+ON department_service_points (
+    service_point_id
+);
+
+-- ============================================================
+-- USER_DEPARTMENT_ACCESS
+-- Quais departamentos cada usuário pode acessar
+-- Vínculo: remover apaga a linha (sem exclusão lógica)
+-- Usuário e departamento da mesma filial (validado pela aplicação)
+-- ============================================================
+
+CREATE TABLE user_department_access (
+    user_id UUID NOT NULL REFERENCES users(id),
+    department_id UUID NOT NULL REFERENCES departments(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    PRIMARY KEY (
+        user_id,
+        department_id
+    )
+);
+
+-- "Quem tem acesso a este departamento?"
+CREATE INDEX ix_user_department_access_department
+ON user_department_access (
+    department_id
+);
+
+-- ============================================================
+-- OPERATOR SESSIONS
+-- Vínculo temporário entre usuário e guichê
+-- ============================================================
+
+CREATE TYPE operator_session_status AS ENUM (
+    'ACTIVE',
+    'CLOSED'
+);
+
+CREATE TYPE operator_session_end_reason AS ENUM (
+    'USER_LEFT',
+    'FORCED_BY_USER',
+    'SERVICE_POINT_DISABLED',
+    'ADMIN_ACTION'
+);
+
+CREATE TABLE operator_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    service_point_id UUID NOT NULL REFERENCES service_points(id),
+
+    status operator_session_status NOT NULL DEFAULT 'ACTIVE',
+
+    started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    ended_at TIMESTAMPTZ,
+
+    ended_by_user_id UUID REFERENCES users(id),
+    end_reason operator_session_end_reason,
+
+    CONSTRAINT chk_operator_session_closed_data
+        CHECK (
+            status <> 'CLOSED'
+            OR (
+                ended_at IS NOT NULL
+                AND ended_by_user_id IS NOT NULL
+                AND end_reason IS NOT NULL
+            )
+        ),
+
+    CONSTRAINT chk_operator_session_active_data
+        CHECK (
+            status <> 'ACTIVE'
+            OR (
+                ended_at IS NULL
+                AND ended_by_user_id IS NULL
+                AND end_reason IS NULL
+            )
+        )
+);
+
+-- Um usuário só pode operar um guichê por vez
+
+CREATE UNIQUE INDEX uq_operator_sessions_active_user
+ON operator_sessions (user_id)
+WHERE status = 'ACTIVE';
+
+-- Um guichê só pode ter um operador ativo por vez
+
+CREATE UNIQUE INDEX uq_operator_sessions_active_service_point
+ON operator_sessions (service_point_id)
+WHERE status = 'ACTIVE';
+
+CREATE INDEX ix_operator_sessions_user_history
+ON operator_sessions (user_id, started_at DESC);
+
+CREATE INDEX ix_operator_sessions_service_point_history
+ON operator_sessions (service_point_id, started_at DESC);
+
+-- ============================================================
+-- TICKETS
+-- ============================================================
+
+CREATE TYPE ticket_status AS ENUM (
+    'WAITING',
+    'IN_SERVICE',
+    'FINISHED',
+    'NO_SHOW',
+    'CANCELLED',
+    'EXPIRED'
+);
+
+CREATE TABLE tickets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id),
+    branch_id UUID NOT NULL REFERENCES branches(id),
+    department_id UUID NOT NULL REFERENCES departments(id),
+
+    code VARCHAR(20) NOT NULL,
+
+    status ticket_status NOT NULL DEFAULT 'WAITING',
+
+    -- Dia da senha no fuso America/Sao_Paulo.
+    -- Calculado pela aplicação e gravado explicitamente.
+    -- Sem DEFAULT CURRENT_DATE: o fuso da sessão do PostgreSQL
+    -- não pode decidir o dia da senha.
+    service_date DATE NOT NULL,
+
+    service_point_id UUID REFERENCES service_points(id),
+    operator_session_id UUID REFERENCES operator_sessions(id),
+
+    cancel_reason VARCHAR(100),
+
+    -- Gravado pela aplicação no mesmo instante usado para service_date.
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    called_at TIMESTAMPTZ,
+    finished_at TIMESTAMPTZ,
+
+    CONSTRAINT uq_tickets_branch_code_date
+        UNIQUE (
+            branch_id,
+            code,
+            service_date
+        )
+);
+
+-- Próxima senha: WHERE department_id, service_date = hoje, WAITING
+-- ORDER BY created_at, id
+CREATE INDEX ix_tickets_queue_lookup
+ON tickets (
+    department_id,
+    service_date,
+    created_at,
+    id
+)
+WHERE status = 'WAITING';
+
+CREATE INDEX ix_tickets_organization_service_date
+ON tickets (
+    organization_id,
+    service_date
+);
+
+CREATE INDEX ix_tickets_branch_service_date
+ON tickets (
+    branch_id,
+    service_date
+);
+
+CREATE INDEX ix_tickets_department_service_date
+ON tickets (
+    department_id,
+    service_date
+);
+
+-- ============================================================
+-- TICKET HISTORY
+-- ============================================================
+
+CREATE TYPE ticket_event_type AS ENUM (
+    'CREATED',
+    'CALLED',
+    'RECALLED',
+    'FINISHED',
+    'CANCELLED',
+    'NO_SHOW',
+    'EXPIRED'
+);
+
+CREATE TABLE ticket_history (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ticket_id UUID NOT NULL REFERENCES tickets(id),
+    event_type ticket_event_type NOT NULL,
+    actor_user_id UUID REFERENCES users(id),
+    -- Dispositivo que gerou o evento (ex.: totem). FK adicionada no fim do arquivo,
+    -- pois public_devices é criada depois.
+    actor_device_id UUID,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX ix_ticket_history_ticket
+ON ticket_history (
+    ticket_id,
+    created_at
+);
+
+-- ============================================================
+-- AUDIT LOGS
+-- ============================================================
+
+CREATE TABLE audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id),
+    -- Filial afetada, quando a ação for de filial
+    branch_id UUID REFERENCES branches(id),
+
+    actor_user_id UUID REFERENCES users(id),
+
+    action VARCHAR(100) NOT NULL,
+    target_type VARCHAR(50) NOT NULL,
+    target_id UUID,
+
+    description TEXT,
+    metadata JSONB,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX ix_audit_logs_organization_created_at
+ON audit_logs (
+    organization_id,
+    created_at DESC
+);
+
+CREATE INDEX ix_audit_logs_actor
+ON audit_logs (
+    actor_user_id,
+    created_at DESC
+);
+
+-- ============================================================
+-- PUBLIC DEVICES
+-- Totem / TV
+-- ============================================================
+
+CREATE TYPE device_type AS ENUM (
+    'TICKET_GENERATOR',
+    'QUEUE_DISPLAY'
+);
+
+CREATE TYPE device_status AS ENUM (
+    'PENDING_ACTIVATION',
+    'ACTIVE',
+    'REVOKED'
+);
+
+CREATE TABLE public_devices (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id),
+    branch_id UUID NOT NULL REFERENCES branches(id),
+
+    name VARCHAR(100) NOT NULL,
+    type device_type NOT NULL,
+    status device_status NOT NULL DEFAULT 'PENDING_ACTIVATION',
+
+    credential_hash VARCHAR(255),
+
+    activation_code VARCHAR(20),
+    activation_code_expires_at TIMESTAMPTZ,
+    activation_code_used_at TIMESTAMPTZ,
+
+    activated_at TIMESTAMPTZ,
+    last_seen_at TIMESTAMPTZ,
+    revoked_at TIMESTAMPTZ,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX ix_public_devices_organization
+ON public_devices (
+    organization_id
+);
+
+CREATE INDEX ix_public_devices_status
+ON public_devices (
+    organization_id,
+    status
+);
+
+-- ============================================================
+-- PUBLIC DEVICE DEPARTMENTS
+-- Departamentos autorizados por dispositivo
+-- ============================================================
+
+CREATE TABLE public_device_departments (
+    public_device_id UUID NOT NULL REFERENCES public_devices(id),
+    department_id UUID NOT NULL REFERENCES departments(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    PRIMARY KEY (
+        public_device_id,
+        department_id
+    )
+);
+
+-- ============================================================
+-- FKs adiadas (tabelas criadas depois da referência)
+-- ============================================================
+
+ALTER TABLE ticket_history
+    ADD CONSTRAINT fk_ticket_history_actor_device
+    FOREIGN KEY (actor_device_id) REFERENCES public_devices(id);
