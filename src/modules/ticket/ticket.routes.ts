@@ -8,11 +8,17 @@ import {
 } from '../../shared/auth/auth-middleware.js';
 import { paginationQuerySchema } from '../../shared/http/pagination.js';
 import { apiErrorResponseSchema } from '../../shared/types/api-error-response.js';
-import { createTicketController, listTicketDepartmentsController } from './ticket.controller.js';
 import {
+  cancelTicketController,
+  createTicketController,
+  listTicketDepartmentsController,
+} from './ticket.controller.js';
+import {
+  ticketCancelSchema,
   ticketCreateSchema,
   ticketDepartmentResponseListSchema,
   ticketEmptySchema,
+  ticketIdParamsSchema,
   ticketResponseSchema,
 } from './ticket.schema.js';
 
@@ -68,5 +74,30 @@ export async function ticketRoutes(app: FastifyInstance) {
       },
     },
     createTicketController,
+  );
+
+  routes.post(
+    '/tickets/:id/cancel',
+    {
+      preHandler: operate,
+      schema: {
+        tags: ['Tickets'],
+        summary: 'Cancelar senha',
+        description:
+          'Qualquer role exceto VIEWER, para senhas de qualquer departamento da filial. WAITING ou IN_SERVICE → CANCELLED, com motivo opcional (até 100 caracteres). Outros status → 409.',
+        security: [{ bearerAuth: [] }],
+        params: ticketIdParamsSchema,
+        body: ticketCancelSchema,
+        querystring: ticketEmptySchema,
+        response: {
+          200: ticketResponseSchema,
+          400: apiErrorResponseSchema,
+          ...authErrors,
+          404: apiErrorResponseSchema,
+          409: apiErrorResponseSchema,
+        },
+      },
+    },
+    cancelTicketController,
   );
 }

@@ -35,3 +35,18 @@ export const ticketDepartmentResponseListSchema = paginatedResponseSchema(
 );
 
 export const ticketEmptySchema = z.strictObject({});
+
+export const ticketIdParamsSchema = z.strictObject({
+  id: z.uuid({ error: 'Identificador de senha inválido' }),
+});
+
+export const ticketCancelSchema = z
+  .strictObject({
+    reason: z
+      .string({ error: 'O motivo deve ser um texto' })
+      .trim()
+      .max(100, 'O motivo deve ter no máximo 100 caracteres')
+      .optional(),
+  })
+  // Body opcional: sem corpo, o Fastify entrega null.
+  .nullish();

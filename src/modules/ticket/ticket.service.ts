@@ -6,8 +6,13 @@ import type { PaginationQuery } from '../../shared/http/pagination.js';
 import { getServiceDate } from '../../shared/utils/date.js';
 import { DepartmentNotFoundException } from '../department/department.errors.js';
 import { generateTicketCode } from './generate-ticket-code.js';
-import { TicketCodeGenerationException } from './ticket.errors.js';
+import {
+  InvalidTicketStatusException,
+  TicketCodeGenerationException,
+  TicketNotFoundException,
+} from './ticket.errors.js';
 import { ticketRepository } from './ticket.repository.js';
+import type { TicketStatus } from '../../shared/types/ticket-status.js';
 import type { Ticket } from './ticket.types.js';
 
 function scopeOf(actor: AuthenticatedUser) {
@@ -51,4 +56,34 @@ export async function createTicket(
     }
   }
   throw new TicketCodeGenerationException();
+}
+
+/** Status a partir dos quais uma senha pode ser cancelada (seção 31 do contexto). */
+const CANCELLABLE_STATUSES: TicketStatus[] = ['WAITING', 'IN_SERVICE'];
+
+/**
+ * Cancela uma senha da filial (qualquer role exceto VIEWER, qualquer departamento).
+ * WAITING/IN_SERVICE → CANCELLED, com motivo opcional e evento CANCELLED.
+ */
+export async function cancelTicket(
+  actor: AuthenticatedUser,
+  ticketId: string,
+  reason: string | undefined,
+): Promise<Ticket> {
+  const ticket = await ticketRepository.findInBranch(scopeOf(actor), ticketId);
+  if (!ticket) {
+    throw new TicketNotFoundException();
+  }
+
+  const cancelled = await ticketRepository.cancel({
+    ticketId: ticket.id,
+    allowedStatuses: CANCELLABLE_STATUSES,
+    reason: reason === undefined || reason === '' ? null : reason,
+    actorUserId: actor.userId,
+    now: new Date(),
+  });
+  if (!cancelled) {
+    throw new InvalidTicketStatusException();
+  }
+  return { ...ticket, status: 'CANCELLED' };
 }
