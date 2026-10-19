@@ -1,4 +1,4 @@
-import { verifyPassword } from '../../shared/auth/password.js';
+import { hashPassword, verifyPassword } from '../../shared/auth/password.js';
 import type { AuthenticatedUser } from '../../shared/auth/jwt.js';
 import {
   InternalServerError,
@@ -9,9 +9,16 @@ import {
   OrganizationInactiveException,
   UserInactiveException,
 } from '../../shared/auth/auth.errors.js';
-import { InvalidCredentialsException } from './auth.errors.js';
+import { InvalidCredentialsException, InvalidCurrentPasswordException } from './auth.errors.js';
 import { authRepository } from './auth.repository.js';
-import type { Auth, AuthLoginRequest, AuthMe, AuthOrganization, AuthUser } from './auth.types.js';
+import type {
+  Auth,
+  AuthChangePasswordRequest,
+  AuthLoginRequest,
+  AuthMe,
+  AuthOrganization,
+  AuthUser,
+} from './auth.types.js';
 
 // Mesmo Argon2id e custo usados por hashPassword; não pertence a uma conta.
 const DUMMY_PASSWORD_HASH =
@@ -78,4 +85,24 @@ export async function getCurrentUser(authUser: AuthenticatedUser): Promise<AuthM
       valid: license.status === 'ACTIVE' && license.expiresAt.getTime() > Date.now(),
     },
   };
+}
+
+/**
+ * Troca da própria senha. Atualiza password_changed_at, o que invalida os tokens
+ * anteriores (inclusive de outros dispositivos); o controller emite um token novo.
+ */
+export async function changeOwnPassword(
+  authUser: AuthenticatedUser,
+  data: AuthChangePasswordRequest,
+): Promise<void> {
+  const passwordHash = await authRepository.findPasswordHash(authUser.userId);
+  if (!passwordHash) throw new UnauthorizedException();
+  if (!(await verifyPassword(passwordHash, data.currentPassword))) {
+    throw new InvalidCurrentPasswordException();
+  }
+  await authRepository.updatePassword(
+    authUser.userId,
+    await hashPassword(data.newPassword),
+    new Date(),
+  );
 }

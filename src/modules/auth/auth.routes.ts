@@ -1,9 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { apiErrorResponseSchema } from '../../shared/types/api-error-response.js';
-import { authenticate } from '../../shared/auth/auth-middleware.js';
-import { loginController, meController } from './auth.controller.js';
+import { authenticate, authMiddleware } from '../../shared/auth/auth-middleware.js';
+import { changePasswordController, loginController, meController } from './auth.controller.js';
 import {
+  authChangePasswordResponseSchema,
+  authChangePasswordSchema,
   authEmptySchema,
   authLoginSchema,
   authMeResponseSchema,
@@ -53,5 +55,28 @@ export async function authRoutes(app: FastifyInstance) {
       },
     },
     meController,
+  );
+
+  app.withTypeProvider<ZodTypeProvider>().patch(
+    '/auth/password',
+    {
+      preHandler: [authMiddleware],
+      schema: {
+        tags: ['Auth'],
+        summary: 'Trocar a própria senha',
+        description:
+          'Exige a senha atual. Invalida os tokens anteriores (outros dispositivos são deslogados) e devolve um token novo para a sessão atual.',
+        security: [{ bearerAuth: [] }],
+        body: authChangePasswordSchema,
+        querystring: authEmptySchema,
+        response: {
+          200: authChangePasswordResponseSchema,
+          400: apiErrorResponseSchema,
+          401: apiErrorResponseSchema,
+          403: apiErrorResponseSchema,
+        },
+      },
+    },
+    changePasswordController,
   );
 }

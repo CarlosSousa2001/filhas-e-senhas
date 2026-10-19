@@ -80,6 +80,20 @@ export const authRepository = {
       .limit(1);
     return branch ?? null;
   },
+  async findPasswordHash(userId: string): Promise<string | null> {
+    const [user] = await db
+      .select({ passwordHash: users.passwordHash })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    return user?.passwordHash ?? null;
+  },
+  async updatePassword(userId: string, passwordHash: string, changedAt: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({ passwordHash, passwordChangedAt: changedAt })
+      .where(eq(users.id, userId));
+  },
   async findLicense(organizationId: string): Promise<Omit<Auth['license'], 'valid'> | null> {
     const [license] = await db
       .select({ status: licenses.status, expiresAt: licenses.expiresAt })

@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp, db, resetDatabase } from '../../../test/helpers.js';
 import { branches, licenses, organizations, users } from '../database/schema/index.js';
 import { authenticate, authMiddleware, requireBranch, requireRole } from './auth-middleware.js';
-import type { JwtPayload } from './jwt.js';
+import { createJwtPayload, type JwtPayload } from './jwt.js';
 import { hashPassword } from './password.js';
 
 let app: Awaited<ReturnType<typeof createTestApp>>;
@@ -108,7 +108,7 @@ function get(url: string, token?: string) {
 }
 
 function sign(payload: JwtPayload, options: { expiresIn?: string | number } = {}) {
-  return app.jwt.sign(payload, options);
+  return app.jwt.sign(createJwtPayload(payload), options);
 }
 
 describe('authMiddleware', () => {

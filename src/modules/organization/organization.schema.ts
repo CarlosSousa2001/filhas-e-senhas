@@ -3,18 +3,15 @@ import {
   MAX_EMAIL_LENGTH,
   MAX_ORGANIZATION_NAME_LENGTH,
   MAX_PERSON_NAME_LENGTH,
-  MAX_PASSWORD_LENGTH,
   MAX_SLUG_LENGTH,
-  MIN_PASSWORD_LENGTH,
 } from '../../shared/constants/index.js';
+import { newPasswordSchema } from '../../shared/auth/password.schema.js';
 import { isValidDocument, normalizeDocument } from '../../shared/utils/document.js';
 import { normalizeEmail } from '../../shared/utils/email.js';
 import { isValidPhone, normalizePhone } from '../../shared/utils/phone.js';
 
 const requiredString = () => z.string({ error: 'Campo obrigatório deve ser um texto' });
-const passwordSchema = requiredString()
-  .min(MIN_PASSWORD_LENGTH, `A senha deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres`)
-  .max(MAX_PASSWORD_LENGTH, `A senha deve ter no máximo ${MAX_PASSWORD_LENGTH} caracteres`);
+const passwordSchema = newPasswordSchema;
 
 export const organizationCreateSchema = z
   .strictObject(

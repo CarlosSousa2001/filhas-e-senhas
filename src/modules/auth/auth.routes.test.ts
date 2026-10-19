@@ -94,6 +94,7 @@ it.each(['OWNER', 'ATTENDANT', 'ADMIN'] as const)(
       organizationId: owner.organizationId,
       branchId: branch.id,
       role,
+      iatMs: expect.any(Number),
       iat: expect.any(Number),
       exp: expect.any(Number),
     });

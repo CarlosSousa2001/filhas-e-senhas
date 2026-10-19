@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { newPasswordSchema } from '../../shared/auth/password.schema.js';
 import {
   MAX_EMAIL_LENGTH,
   MAX_PASSWORD_LENGTH,
@@ -53,4 +54,17 @@ export const authResponseSchema = z.object({
 /** GET /auth/me: mesmo formato do login, sem o token. */
 export const authMeResponseSchema = authResponseSchema.omit({ accessToken: true }).extend({
   branch: z.object({ id: z.uuid(), name: z.string() }).nullable(),
+});
+
+/** PATCH /auth/password: troca da própria senha. */
+export const authChangePasswordSchema = z.strictObject({
+  currentPassword: z
+    .string({ error: 'Informe a senha atual' })
+    .min(1, 'Informe a senha atual')
+    .max(MAX_PASSWORD_LENGTH, 'Senha atual incorreta'),
+  newPassword: newPasswordSchema,
+});
+
+export const authChangePasswordResponseSchema = z.object({
+  accessToken: z.string(),
 });

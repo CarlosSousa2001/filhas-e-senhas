@@ -8,8 +8,20 @@ export type JwtPayload = {
   role: UserRole;
 };
 
+/**
+ * Payload efetivamente assinado: inclui `iatMs`, o instante de emissão em milissegundos.
+ * O `iat` padrão do JWT tem precisão de segundos e não basta para invalidar com exatidão
+ * os tokens emitidos antes de uma troca de senha.
+ */
+export type SignedJwtPayload = JwtPayload & { iatMs: number };
+
 /** Token decodificado: payload + campos padrão do JWT. */
-export type DecodedJwt = JwtPayload & { iat: number; exp: number };
+export type DecodedJwt = SignedJwtPayload & { iat: number; exp: number };
+
+/** Monta o payload a ser assinado (login, troca de senha). */
+export function createJwtPayload(claims: JwtPayload): SignedJwtPayload {
+  return { ...claims, iatMs: Date.now() };
+}
 
 /**
  * Usuário autenticado disponível em `request.user` depois do `authMiddleware`.
@@ -24,7 +36,7 @@ export type AuthenticatedUser = {
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: JwtPayload;
+    payload: SignedJwtPayload;
     user: AuthenticatedUser;
   }
 }

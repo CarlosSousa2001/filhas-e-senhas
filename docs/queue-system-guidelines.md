@@ -1165,7 +1165,9 @@ Detalhes funcionais: `queue-system-context.md`, seção 5.
 - `PATCH /auth/password` `{ currentPassword, newPassword }`: o próprio usuário troca a senha;
 - `PATCH /users/:userId/password` `{ newPassword }`: OWNER redefine de qualquer usuário; ADMIN de qualquer um, exceto o OWNER; BRANCH_ADMIN de MANAGER, ATTENDANT e VIEWER da sua filial;
 - OWNER que esqueceu a senha: suporte manual na V1;
-- toda troca/redefinição atualiza `users.password_changed_at`; o middleware recusa tokens emitidos antes disso (derruba sessões antigas e permite "sair de todos os dispositivos").
+- toda troca/redefinição atualiza `users.password_changed_at`; o middleware recusa tokens emitidos antes disso (derruba sessões antigas e permite "sair de todos os dispositivos");
+- o token carrega a claim técnica `iatMs` (emissão em milissegundos), comparada com `password_changed_at` — o `iat` padrão tem precisão de segundos e deixaria passar tokens emitidos no mesmo segundo da troca;
+- `PATCH /auth/password` devolve `{ accessToken }` novo, para a sessão atual continuar; `PATCH /users/:userId/password` responde `204`.
 
 ---
 

@@ -5,3 +5,9 @@ export class InvalidCredentialsException extends AppError {
     super('Credenciais inválidas', 401, 'InvalidCredentialsException');
   }
 }
+
+export class InvalidCurrentPasswordException extends AppError {
+  constructor() {
+    super('Senha atual incorreta', 400, 'InvalidCurrentPasswordException');
+  }
+}

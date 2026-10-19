@@ -21,7 +21,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 async function verifyToken(request: FastifyRequest): Promise<DecodedJwt> {
   try {
     const decoded = await request.jwtVerify<DecodedJwt>();
-    if (!UUID_PATTERN.test(decoded.userId) || typeof decoded.iat !== 'number') {
+    if (!UUID_PATTERN.test(decoded.userId) || typeof decoded.iatMs !== 'number') {
       throw new Error('Payload inválido');
     }
     return decoded;
@@ -46,7 +46,7 @@ export function authenticate(options: AuthenticateOptions = {}): preHandlerAsync
     const { user, organization, license } = context;
 
     // Troca/redefinição de senha invalida os tokens emitidos antes dela.
-    if (Math.floor(user.passwordChangedAt.getTime() / 1000) > token.iat) {
+    if (token.iatMs < user.passwordChangedAt.getTime()) {
       throw new UnauthorizedException();
     }
 
