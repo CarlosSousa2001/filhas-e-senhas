@@ -6,6 +6,7 @@ export default defineConfig({
     environment: 'node',
     env: {
       NODE_ENV: 'test',
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/senhas_test',
     },
   },
 });
