@@ -1,8 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { apiErrorResponseSchema } from '../../shared/types/api-error-response.js';
-import { loginController } from './auth.controller.js';
-import { authEmptySchema, authLoginSchema, authResponseSchema } from './auth.schema.js';
+import { authenticate } from '../../shared/auth/auth-middleware.js';
+import { loginController, meController } from './auth.controller.js';
+import {
+  authEmptySchema,
+  authLoginSchema,
+  authMeResponseSchema,
+  authResponseSchema,
+} from './auth.schema.js';
 
 export async function authRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -25,5 +31,27 @@ export async function authRoutes(app: FastifyInstance) {
       },
     },
     loginController,
+  );
+
+  app.withTypeProvider<ZodTypeProvider>().get(
+    '/auth/me',
+    {
+      // Responde mesmo com a licença vencida, para o frontend mostrar o aviso.
+      preHandler: [authenticate({ allowInvalidLicense: true })],
+      schema: {
+        tags: ['Auth'],
+        summary: 'Usuário logado',
+        description:
+          'Mesmo formato da resposta do login, sem o token: usuário, organização (com slug), filial e licença. Continua respondendo com licença inválida.',
+        security: [{ bearerAuth: [] }],
+        querystring: authEmptySchema,
+        response: {
+          200: authMeResponseSchema,
+          401: apiErrorResponseSchema,
+          403: apiErrorResponseSchema,
+        },
+      },
+    },
+    meController,
   );
 }

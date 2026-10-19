@@ -49,3 +49,8 @@ export const authResponseSchema = z.object({
     valid: z.boolean(),
   }),
 });
+
+/** GET /auth/me: mesmo formato do login, sem o token. */
+export const authMeResponseSchema = authResponseSchema.omit({ accessToken: true }).extend({
+  branch: z.object({ id: z.uuid(), name: z.string() }).nullable(),
+});

@@ -1,5 +1,9 @@
 import { verifyPassword } from '../../shared/auth/password.js';
-import { InternalServerError } from '../../shared/errors/common-exceptions.js';
+import type { AuthenticatedUser } from '../../shared/auth/jwt.js';
+import {
+  InternalServerError,
+  UnauthorizedException,
+} from '../../shared/errors/common-exceptions.js';
 import {
   BranchInactiveException,
   OrganizationInactiveException,
@@ -7,7 +11,7 @@ import {
 } from '../../shared/auth/auth.errors.js';
 import { InvalidCredentialsException } from './auth.errors.js';
 import { authRepository } from './auth.repository.js';
-import type { Auth, AuthLoginRequest, AuthOrganization, AuthUser } from './auth.types.js';
+import type { Auth, AuthLoginRequest, AuthMe, AuthOrganization, AuthUser } from './auth.types.js';
 
 // Mesmo Argon2id e custo usados por hashPassword; não pertence a uma conta.
 const DUMMY_PASSWORD_HASH =
@@ -43,6 +47,30 @@ export async function login(data: AuthLoginRequest): Promise<Auth> {
   if (!license) throw new InternalServerError();
   return {
     user: { id: user.id, name: user.name, username: user.username, role: user.role },
+    organization: { id: organization.id, name: organization.name, slug: organization.slug },
+    branch,
+    license: {
+      ...license,
+      valid: license.status === 'ACTIVE' && license.expiresAt.getTime() > Date.now(),
+    },
+  };
+}
+
+/**
+ * Dados do usuário logado (GET /auth/me). O authMiddleware já validou usuário,
+ * organização e filial; a licença é devolvida mesmo inválida, para o frontend avisar.
+ */
+export async function getCurrentUser(authUser: AuthenticatedUser): Promise<AuthMe> {
+  const [user, organization, license, branch] = await Promise.all([
+    authRepository.findUserById(authUser.userId),
+    authRepository.findOrganizationByIdIncludingDeleted(authUser.organizationId),
+    authRepository.findLicense(authUser.organizationId),
+    authUser.branchId === null ? null : authRepository.findBranchById(authUser.branchId),
+  ]);
+  if (!user || !organization) throw new UnauthorizedException();
+  if (!license) throw new InternalServerError();
+  return {
+    user,
     organization: { id: organization.id, name: organization.name, slug: organization.slug },
     branch,
     license: {

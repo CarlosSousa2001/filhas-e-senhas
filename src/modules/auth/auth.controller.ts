@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { JwtPayload } from '../../shared/auth/jwt.js';
-import { toAuthResponse } from './auth.dto.js';
-import { login } from './auth.service.js';
+import { toAuthMeResponse, toAuthResponse } from './auth.dto.js';
+import { getCurrentUser, login } from './auth.service.js';
 import type { AuthLoginRequest } from './auth.types.js';
 
 export async function loginController(
@@ -17,4 +17,9 @@ export async function loginController(
   };
   const accessToken = await reply.jwtSign(payload);
   return reply.code(200).send(toAuthResponse(auth, accessToken));
+}
+
+export async function meController(request: FastifyRequest) {
+  const me = await getCurrentUser(request.user);
+  return toAuthMeResponse(me);
 }

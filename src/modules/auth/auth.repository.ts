@@ -64,6 +64,22 @@ export const authRepository = {
       .limit(1);
     return branch ?? null;
   },
+  async findUserById(id: string): Promise<Auth['user'] | null> {
+    const [user] = await db
+      .select({ id: users.id, name: users.name, username: users.username, role: users.role })
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+    return user ?? null;
+  },
+  async findBranchById(id: string): Promise<Auth['branch'] | null> {
+    const [branch] = await db
+      .select({ id: branches.id, name: branches.name })
+      .from(branches)
+      .where(eq(branches.id, id))
+      .limit(1);
+    return branch ?? null;
+  },
   async findLicense(organizationId: string): Promise<Omit<Auth['license'], 'valid'> | null> {
     const [license] = await db
       .select({ status: licenses.status, expiresAt: licenses.expiresAt })

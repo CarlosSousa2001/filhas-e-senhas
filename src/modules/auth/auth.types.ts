@@ -1,7 +1,7 @@
 import type { z } from 'zod';
 import type { UserRole } from '../../shared/types/user-role.js';
 import type { LicenseStatus } from '../../shared/types/license-status.js';
-import type { authLoginSchema, authResponseSchema } from './auth.schema.js';
+import type { authLoginSchema, authMeResponseSchema, authResponseSchema } from './auth.schema.js';
 
 interface AuthUserEntity {
   id: string;
@@ -32,3 +32,5 @@ export type AuthOrganization = AuthOrganizationEntity;
 export type Auth = AuthEntity;
 export type AuthLoginRequest = z.infer<typeof authLoginSchema>;
 export type AuthResponse = z.infer<typeof authResponseSchema>;
+export type AuthMe = Omit<AuthEntity, 'branch'> & { branch: AuthEntity['branch'] | null };
+export type AuthMeResponse = z.infer<typeof authMeResponseSchema>;
