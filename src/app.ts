@@ -7,6 +7,8 @@ import {
 import { env } from './env.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { registerDocs } from './shared/http/docs.js';
+import { registerErrorHandlers } from './shared/errors/error-handler.js';
+import { loggerOptions } from './shared/http/logger.js';
 
 /**
  * Monta a aplicação Fastify sem abrir porta.
@@ -14,12 +16,13 @@ import { registerDocs } from './shared/http/docs.js';
  */
 export async function buildApp() {
   const app = Fastify({
-    logger: env.NODE_ENV !== 'test',
+    logger: env.NODE_ENV !== 'test' ? loggerOptions : false,
   }).withTypeProvider<ZodTypeProvider>();
 
   // O mesmo schema Zod valida a entrada, filtra a saída e gera a documentação.
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+  registerErrorHandlers(app);
 
   // A documentação precisa ser registrada antes das rotas.
   if (env.DOCS_ENABLED) {
