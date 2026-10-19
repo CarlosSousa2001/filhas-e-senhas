@@ -17,6 +17,7 @@ Se o código e os documentos divergirem, os documentos vencem. Não reabrir deci
 
 - **Uma tarefa de `docs/tasks/` por vez**, na ordem. Não adiantar trabalho de tarefas seguintes.
 - Ao terminar, atualizar o status no arquivo da tarefa e em `docs/tasks/README.md` e descrever o que mudou e como conferir.
+- No arquivo da tarefa, acrescentar apenas duas seções curtas: **Implementação** (o que foi criado) e **Como conferir** (comandos). Detalhes do seu ambiente de execução não vão para o arquivo.
 - Respostas e mensagens para o usuário em **português**; código, nomes de arquivos e identificadores em inglês.
 - Preferir a solução mais simples que atenda à tarefa; nada de abstração genérica sem necessidade.
 
