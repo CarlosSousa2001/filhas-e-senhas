@@ -9,7 +9,9 @@ import {
 import { z } from 'zod';
 import { env } from './env.js';
 import { healthRoutes } from './modules/health/health.routes.js';
+import { departmentRoutes } from './modules/department/department.routes.js';
 import { organizationRoutes } from './modules/organization/organization.routes.js';
+import { servicePointRoutes } from './modules/service-point/service-point.routes.js';
 import { userRoutes } from './modules/user/user.routes.js';
 import { registerDocs } from './shared/http/docs.js';
 import { registerRateLimit } from './shared/http/rate-limit.js';
@@ -50,6 +52,8 @@ export async function buildApp() {
   await app.register(organizationRoutes);
   await app.register(userRoutes);
   await app.register(authRoutes);
+  await app.register(departmentRoutes);
+  await app.register(servicePointRoutes);
 
   return app;
 }

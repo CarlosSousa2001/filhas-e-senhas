@@ -9,7 +9,7 @@ import {
   UserInactiveException,
 } from './auth.errors.js';
 import { authContextRepository } from './auth-context.repository.js';
-import type { DecodedJwt } from './jwt.js';
+import type { AuthenticatedUser, DecodedJwt } from './jwt.js';
 
 type AuthenticateOptions = {
   /** Usado apenas por rotas que precisam responder mesmo com a licença vencida (ex.: GET /auth/me). */
@@ -106,3 +106,14 @@ export function requireRole(...roles: UserRole[]): preHandlerAsyncHookHandler {
     }
   };
 }
+
+/** Filial do usuário autenticado em rotas protegidas por `requireBranch`. */
+export function branchIdOf(user: AuthenticatedUser): string {
+  if (user.branchId === null) {
+    throw new BranchNotSelectedException();
+  }
+  return user.branchId;
+}
+
+/** Roles que enxergam e administram todos os departamentos da filial. */
+export const BRANCH_MANAGEMENT_ROLES: readonly UserRole[] = ['OWNER', 'ADMIN', 'BRANCH_ADMIN'];
