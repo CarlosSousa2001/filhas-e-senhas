@@ -1,5 +1,5 @@
 import { afterAll } from 'vitest';
-import { buildApp } from '../src/app.js';
+import type { buildApp } from '../src/app.js';
 import { db, pool } from '../src/shared/database/client.js';
 import { truncateTestDatabase } from './database.js';
 
@@ -17,6 +17,7 @@ afterAll(async () => {
 });
 
 export async function createTestApp() {
+  const { buildApp } = await import('../src/app.js');
   const app = await buildApp();
   apps.push(app);
   await app.ready();

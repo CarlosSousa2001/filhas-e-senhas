@@ -6,6 +6,7 @@ import {
 } from 'fastify-type-provider-zod';
 import { env } from './env.js';
 import { healthRoutes } from './modules/health/health.routes.js';
+import { organizationRoutes } from './modules/organization/organization.routes.js';
 import { registerDocs } from './shared/http/docs.js';
 import { registerErrorHandlers } from './shared/errors/error-handler.js';
 import { loggerOptions } from './shared/http/logger.js';
@@ -30,6 +31,7 @@ export async function buildApp() {
   }
 
   await app.register(healthRoutes);
+  await app.register(organizationRoutes);
 
   return app;
 }

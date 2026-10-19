@@ -123,7 +123,7 @@ JWT:
 
 Repository:
 
-- funções exportadas soltas, no estilo da seção 44 (`findDepartmentsByBranch`).
+- um objeto `<feature>Repository` com os métodos de persistência (ex.: `organizationRepository.create`, `departmentRepository.findByBranch`); o objeto permite simular falhas do banco nos testes com `vi.spyOn`. O exemplo da seção 44 usa funções soltas apenas por simplicidade.
 
 Role tipada:
 
