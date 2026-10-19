@@ -20,6 +20,7 @@ export default defineConfig({
     fileParallelism: false,
     env: {
       NODE_ENV: 'test',
+      JWT_SECRET: 'test-only-jwt-secret-at-least-32-characters',
       DATABASE_URL: databaseUrl,
     },
   },

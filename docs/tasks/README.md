@@ -47,7 +47,7 @@ O MVP está pronto quando este cenário funcionar de ponta a ponta pela API:
 | 06 | [Infraestrutura de testes](06-infraestrutura-de-testes.md) | M0 — Fundação | ✅ |
 | 07 | [Cadastro da organização](07-cadastro-da-organizacao.md) | M1 — Cadastro e acesso | 🔄 |
 | 08 | [Nome da empresa pelo slug](08-nome-da-empresa-pelo-slug.md) | M1 — Cadastro e acesso | 🔄 |
-| 09 | [Login (dono e funcionário)](09-login-dono-e-funcionario.md) | M1 — Cadastro e acesso | ⬜ |
+| 09 | [Login (dono e funcionário)](09-login-dono-e-funcionario.md) | M1 — Cadastro e acesso | 🔄 |
 | 10 | [Proteção das rotas (middleware)](10-protecao-das-rotas-middleware.md) | M1 — Cadastro e acesso | ⬜ |
 | 11 | [Usuário logado (`/auth/me`)](11-usuario-logado-auth-me.md) | M1 — Cadastro e acesso | ⬜ |
 | 12 | [Troca e redefinição de senha](12-troca-e-redefinicao-de-senha.md) | M1 — Cadastro e acesso | ⬜ |
