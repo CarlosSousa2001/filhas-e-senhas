@@ -1,4 +1,5 @@
 import { and, eq } from 'drizzle-orm';
+import { notDeleted } from '../../shared/database/not-deleted.js';
 import { db } from '../../shared/database/client.js';
 import {
   organizations,
@@ -42,6 +43,21 @@ export const organizationRepository = {
       .where(eq(organizations.slug, slug))
       .limit(1);
     return rows.length > 0;
+  },
+
+  async findActiveNameBySlug(slug: string): Promise<string | null> {
+    const [row] = await db
+      .select({ name: organizations.name })
+      .from(organizations)
+      .where(
+        and(
+          eq(organizations.slug, slug),
+          eq(organizations.active, true),
+          notDeleted(organizations),
+        ),
+      )
+      .limit(1);
+    return row?.name ?? null;
   },
 
   async create(data: OrganizationCreateData): Promise<Organization> {

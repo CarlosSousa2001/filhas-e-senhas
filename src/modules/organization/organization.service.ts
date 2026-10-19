@@ -15,6 +15,7 @@ import {
 import { generateUsername } from '../../shared/utils/username.js';
 import {
   OrganizationDocumentAlreadyExistsException,
+  OrganizationNotFoundException,
   OwnerEmailAlreadyExistsException,
 } from './organization.errors.js';
 import { organizationRepository } from './organization.repository.js';
@@ -62,4 +63,13 @@ export async function createOrganization(data: OrganizationCreateRequest): Promi
     }
   }
   throw new ConflictException();
+}
+
+/** Nome da empresa para a tela de login do funcionário. Inexistente, inativa ou excluída → 404. */
+export async function getOrganizationNameBySlug(slug: string): Promise<string> {
+  const name = await organizationRepository.findActiveNameBySlug(slug);
+  if (name === null) {
+    throw new OrganizationNotFoundException();
+  }
+  return name;
 }

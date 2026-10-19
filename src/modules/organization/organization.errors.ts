@@ -19,3 +19,9 @@ export class OwnerEmailAlreadyExistsException extends AppError {
     );
   }
 }
+
+export class OrganizationNotFoundException extends AppError {
+  constructor() {
+    super('Empresa não encontrada', 404, 'OrganizationNotFoundException');
+  }
+}

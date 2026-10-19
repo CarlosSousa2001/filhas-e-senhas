@@ -4,6 +4,7 @@ import {
   MAX_ORGANIZATION_NAME_LENGTH,
   MAX_PERSON_NAME_LENGTH,
   MAX_PASSWORD_LENGTH,
+  MAX_SLUG_LENGTH,
   MIN_PASSWORD_LENGTH,
 } from '../../shared/constants/index.js';
 import { isValidDocument, normalizeDocument } from '../../shared/utils/document.js';
@@ -49,6 +50,14 @@ export const organizationCreateSchema = z
     path: ['passwordConfirmation'],
     message: 'As senhas não conferem',
   });
+
+export const organizationSlugParamsSchema = z.strictObject({
+  slug: z.string().trim().toLowerCase().max(MAX_SLUG_LENGTH),
+});
+
+export const organizationPublicResponseSchema = z.object({
+  name: z.string(),
+});
 
 export const organizationEmptySchema = z.strictObject({}, { error: 'Campos não permitidos' });
 

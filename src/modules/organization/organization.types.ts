@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import type {
   organizationCreateSchema,
+  organizationPublicResponseSchema,
   organizationResponseSchema,
 } from './organization.schema.js';
 
@@ -14,6 +15,7 @@ interface OrganizationEntity {
 export type Organization = OrganizationEntity;
 export type OrganizationCreateRequest = z.infer<typeof organizationCreateSchema>;
 export type OrganizationResponse = z.infer<typeof organizationResponseSchema>;
+export type OrganizationPublicResponse = z.infer<typeof organizationPublicResponseSchema>;
 export type OrganizationCreateData = Omit<
   OrganizationCreateRequest,
   'password' | 'passwordConfirmation' | 'acceptedTerms'
