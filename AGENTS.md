@@ -20,6 +20,7 @@ Se o código e os documentos divergirem, os documentos vencem. Não reabrir deci
 - No arquivo da tarefa, acrescentar apenas duas seções curtas: **Implementação** (o que foi criado) e **Como conferir** (comandos). Detalhes do seu ambiente de execução não vão para o arquivo.
 - Respostas e mensagens para o usuário em **português**; código, nomes de arquivos e identificadores em inglês.
 - Preferir a solução mais simples que atenda à tarefa; nada de abstração genérica sem necessidade.
+- Todos os arquivos são **UTF-8** (os documentos têm acentos e emojis). No Windows, nunca gravar arquivos com `Set-Content`/`Out-File` do PowerShell; usar a ferramenta de edição de arquivos (`apply_patch`). Depois de editar um `.md`, conferir que os acentos não viraram `?`.
 
 ## Definição de pronto
 
