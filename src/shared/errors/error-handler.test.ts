@@ -42,7 +42,7 @@ describe('tratamento global de erros', () => {
 
   it.each([
     [new ValidationException(), 400, 'ValidationException', 'Dados inválidos'],
-    [new UnauthorizedException(), 401, 'UnauthorizedException', 'Não autorizado'],
+    [new UnauthorizedException(), 401, 'UnauthorizedException', 'Não autenticado'],
     [new ForbiddenException(), 403, 'ForbiddenException', 'Acesso negado'],
     [new NotFoundException(), 404, 'NotFoundException', 'Recurso não encontrado'],
     [new ConflictException(), 409, 'ConflictException', 'Conflito com um registro existente'],

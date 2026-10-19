@@ -45,13 +45,13 @@ O MVP está pronto quando este cenário funcionar de ponta a ponta pela API:
 | 04 | [Tratamento de erros padrão](04-tratamento-de-erros-padrao.md) | M0 — Fundação | ✅ |
 | 05 | [Funções utilitárias](05-funcoes-utilitarias.md) | M0 — Fundação | ✅ |
 | 06 | [Infraestrutura de testes](06-infraestrutura-de-testes.md) | M0 — Fundação | ✅ |
-| 07 | [Cadastro da organização](07-cadastro-da-organizacao.md) | M1 — Cadastro e acesso | ⬜ |
-| 08 | [Nome da empresa pelo slug](08-nome-da-empresa-pelo-slug.md) | M1 — Cadastro e acesso | ⬜ |
-| 09 | [Login (dono e funcionário)](09-login-dono-e-funcionario.md) | M1 — Cadastro e acesso | ⬜ |
-| 10 | [Proteção das rotas (middleware)](10-protecao-das-rotas-middleware.md) | M1 — Cadastro e acesso | ⬜ |
-| 11 | [Usuário logado (`/auth/me`)](11-usuario-logado-auth-me.md) | M1 — Cadastro e acesso | ⬜ |
-| 12 | [Troca e redefinição de senha](12-troca-e-redefinicao-de-senha.md) | M1 — Cadastro e acesso | ⬜ |
-| 13 | [Limite de requisições (rate limit)](13-limite-de-requisicoes-rate-limit.md) | M1 — Cadastro e acesso | ⬜ |
+| 07 | [Cadastro da organização](07-cadastro-da-organizacao.md) | M1 — Cadastro e acesso | ✅ |
+| 08 | [Nome da empresa pelo slug](08-nome-da-empresa-pelo-slug.md) | M1 — Cadastro e acesso | ✅ |
+| 09 | [Login (dono e funcionário)](09-login-dono-e-funcionario.md) | M1 — Cadastro e acesso | ✅ |
+| 10 | [Proteção das rotas (middleware)](10-protecao-das-rotas-middleware.md) | M1 — Cadastro e acesso | ✅ |
+| 11 | [Usuário logado (`/auth/me`)](11-usuario-logado-auth-me.md) | M1 — Cadastro e acesso | ✅ |
+| 12 | [Troca e redefinição de senha](12-troca-e-redefinicao-de-senha.md) | M1 — Cadastro e acesso | ✅ |
+| 13 | [Limite de requisições (rate limit)](13-limite-de-requisicoes-rate-limit.md) | M1 — Cadastro e acesso | ✅ |
 | 14 | [Departamentos](14-departamentos.md) | M2 — Configuração da clínica | ⬜ |
 | 15 | [Balcões (guichês)](15-balcoes-guiches.md) | M2 — Configuração da clínica | ⬜ |
 | 16 | [Usuários e acesso a departamentos](16-usuarios-e-acesso-a-departamentos.md) | M2 — Configuração da clínica | ⬜ |

@@ -9,7 +9,7 @@ export class ValidationException extends AppError {
 
 export class UnauthorizedException extends AppError {
   constructor() {
-    super('Não autorizado', 401, 'UnauthorizedException');
+    super('Não autenticado', 401, 'UnauthorizedException');
   }
 }
 
@@ -34,5 +34,11 @@ export class ConflictException extends AppError {
 export class InternalServerError extends AppError {
   constructor() {
     super('Erro interno do servidor', 500, 'InternalServerError');
+  }
+}
+
+export class RateLimitExceededException extends AppError {
+  constructor() {
+    super('Muitas requisições. Tente novamente em instantes.', 429, 'RateLimitExceededException');
   }
 }

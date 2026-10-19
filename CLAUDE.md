@@ -1,10 +1,10 @@
 @AGENTS.md
 
-## Papel do Claude Code neste projeto: revisor
+## Papel do Claude Code neste projeto
 
-O código é implementado pelo Codex, uma tarefa de `docs/tasks/` por vez. O Claude Code revisa cada entrega antes de o usuário aprovar.
+O Claude Code implementa as tarefas de `docs/tasks/`, uma por vez, seguindo o `AGENTS.md`.
 
-Ao revisar uma tarefa:
+Quando o Codex estiver disponível e for usado para implementar, o Claude Code passa a revisar cada entrega antes de o usuário aprovar:
 
 1. Ler o arquivo da tarefa em `docs/tasks/` (objetivo, entrega, como conferir).
 2. Ler a diferença (`git diff` da branch da tarefa).
@@ -15,4 +15,7 @@ Ao revisar uma tarefa:
    - **Ajustar:** desvio de convenção dos documentos;
    - **Ok:** o que foi conferido e está certo.
 
-Não reescrever a implementação durante a revisão; apontar o problema, o arquivo/linha e a regra do documento que ele viola.
+## Git
+
+- Uma branch por tarefa (`task/NN-descricao`); um commit por tarefa.
+- Merge na `main` (`--no-ff`) somente depois da aprovação do usuário; depois, push.
