@@ -9,7 +9,7 @@ export class ValidationException extends AppError {
 
 export class UnauthorizedException extends AppError {
   constructor() {
-    super('Não autorizado', 401, 'UnauthorizedException');
+    super('Não autenticado', 401, 'UnauthorizedException');
   }
 }
 

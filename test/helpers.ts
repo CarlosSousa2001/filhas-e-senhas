@@ -16,10 +16,17 @@ afterAll(async () => {
   }
 });
 
-export async function createTestApp() {
+type TestApp = Awaited<ReturnType<typeof buildApp>>;
+
+/**
+ * Sobe a API para testes (app.inject).
+ * `registerRoutes` permite registrar rotas temporárias de teste antes do ready.
+ */
+export async function createTestApp(registerRoutes?: (app: TestApp) => void | Promise<void>) {
   const { buildApp } = await import('../src/app.js');
   const app = await buildApp();
   apps.push(app);
+  await registerRoutes?.(app);
   await app.ready();
   return app;
 }

@@ -2,10 +2,10 @@ import { verifyPassword } from '../../shared/auth/password.js';
 import { InternalServerError } from '../../shared/errors/common-exceptions.js';
 import {
   BranchInactiveException,
-  InvalidCredentialsException,
   OrganizationInactiveException,
   UserInactiveException,
-} from './auth.errors.js';
+} from '../../shared/auth/auth.errors.js';
+import { InvalidCredentialsException } from './auth.errors.js';
 import { authRepository } from './auth.repository.js';
 import type { Auth, AuthLoginRequest, AuthOrganization, AuthUser } from './auth.types.js';
 
